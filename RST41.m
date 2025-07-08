@@ -45,6 +45,8 @@ timeInterval = [trajTimes(1); trajTimes(end)];
 
 % 创建任务空间运动模型
 tsMotionModel = taskSpaceMotionModel('RigidBodyTree',robot,'EndEffectorName','tool0');
+% ⬆初始化一个任务空间控制器，为后续的笛卡尔空间轨迹规划和控制提供计算基础。
+% 它抽象了机器人的动力学特性，使得用户可以直接操作末端执行器的位姿，而无需手动处理关节级别的细节。
 
 % 设置位置和速度控制增益（这里将位置和速度增益设为0，可能使用默认值）
 tsMotionModel.Kp(1:3,1:3) = 0;
@@ -56,6 +58,12 @@ qd0 = zeros(size(q0));
 
 % 使用ode15s求解器求解任务空间运动微分方程
 [tTask,stateTask] = ode15s(@(t,state) exampleHelperTimeBasedTaskInputs(tsMotionModel,timeInterval,taskInit,taskFinal,t,state),timeInterval,[q0; qd0]);
+%tTask：ode15s求解器返回的时间向量（N×1），记录了每个仿真时间步的时间点。
+%stateTask：ode15s求解器返回的状态矩阵（N×2M），其中：
+% 前 M 列：各关节的位置（q）。
+% 后 M 列：各关节的速度（qd）。
+% M 是机器人的关节数（numJoints）。
+
 
 % 创建逆运动学求解器
 ik = inverseKinematics('RigidBodyTree',robot);
@@ -183,7 +191,6 @@ title(['机械臂轨迹规划演示 - 关节空间规划 (循环次数: ' num2st
 
 % 清除之前的轨迹点
 delete(findobj(gca, 'Type', 'line', 'Marker', '.'));
-    
 
 % 动画演示关节空间轨迹
 for i=1:length(trajTimes)
